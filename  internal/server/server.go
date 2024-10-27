@@ -1,10 +1,10 @@
 package server
 
 import (
-	"Friends/storage"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/AndreySirin/Friends/storage"
 	"github.com/go-chi/chi/v5"
 	"html/template"
 	"log/slog"
@@ -96,10 +96,12 @@ func (s *Server) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"id":      prod.ID,
 		"message": "Product added successfully",
-	})
+	}); err != nil {
+		http.Error(w, "error encoding product", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -115,10 +117,12 @@ func (s *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"id":      prod.ID,
 		"message": "Product updated successfully",
-	})
+	}); err != nil {
+		http.Error(w, "error encoding product", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +139,10 @@ func (s *Server) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error deleting product", http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte("successful delete"))
+	if _, err = w.Write([]byte("successful delete")); err != nil {
+		http.Error(w, "error deleting product", http.StatusInternalServerError)
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 

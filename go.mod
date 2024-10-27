@@ -1,4 +1,4 @@
-module Friends
+module github.com/AndreySirin/Friends
 
 go 1.23.1
 

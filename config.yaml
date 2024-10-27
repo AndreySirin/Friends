@@ -1,7 +1,7 @@
 
 app:
-  name: "MyApp"
-  version: "1.0.0"
+  name: "friends"
+  version: "0.0.1"
 
   development:
     server:

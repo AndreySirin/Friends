@@ -3,15 +3,29 @@ package config
 import (
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"log/slog"
 	"os"
 )
 
 type Config struct {
 	App App `yaml:"app"`
 }
+
+type App struct {
+	Name        string      `yaml:"name"`
+	Version     string      `yaml:"version"`
+	Development Development `yaml:"development"`
+}
+
+type Development struct {
+	Server   Server   `yaml:"server"`
+	Database Database `yaml:"database"`
+}
+
 type Server struct {
 	HTTPPort string `yaml:"httpPort"`
 }
+
 type Database struct {
 	Address      string `yaml:"address"`
 	Username     string `yaml:"username"`
@@ -22,26 +36,17 @@ type Database struct {
 	Dir          string `yaml:"dir"`
 	Table        string `yaml:"table"`
 }
-type Development struct {
-	Server   Server   `yaml:"server"`
-	Database Database `yaml:"database"`
-}
-type App struct {
-	Name        string      `yaml:"name"`
-	Version     string      `yaml:"version"`
-	Development Development `yaml:"development"`
-}
 
-func LoadConfig(path string) (*Config, error) {
+func LoadConfig(lg *slog.Logger, path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	var config Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return nil, err
+	if err = yaml.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
-	fmt.Printf("Загруженная конфигурация: %+v\n", config)
+	lg.With("module", "config").Debug(fmt.Sprintf("%+v\n", config))
 	return &config, nil
 }
