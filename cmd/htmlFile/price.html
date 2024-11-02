@@ -2,9 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
 </head>
 <body>
-<h1> вот здесь должен быть список</h1>
+<h1>Product List</h1>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Hobby</th>
+        <th>Price</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .}}
+    <tr>
+        <td>{{.ID}}</td>
+        <td>{{.Name}}</td>
+        <td>{{.Hobby}}</td>
+        <td>{{.Price}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
 </body>
 </html>
