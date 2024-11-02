@@ -1,17 +1,17 @@
 package main
 
 import (
-	"Friends/base"
 	"Friends/logg"
 	"Friends/server"
+	"Friends/storage"
 	"context"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 const (
 	address  = "127.0.0.1:5432"
-	username = "andrey"
-	password = "mysecretpassword"
+	username = "myuser"
+	password = "mypassword"
 	database = "mydatabase"
 
 	httpPort = ":8080"
@@ -19,42 +19,34 @@ const (
 
 func main() {
 
-	logger := logg.New()
-	logger.Info("start server")
+	lg := logg.New()
+	lg.Info("start server")
 
-	psql, err := base.NewBase(logger, username, password, address, database)
+	psql, err := storage.New(lg, username, password, address, database)
 	if err != nil {
-		logger.Error("Failed to connect to database",
+		lg.Error("Failed to connect to database",
 			"error", err)
 		return
 	}
 
 	defer func() {
 		if err = psql.Close(); err != nil {
-			logger.Error("Failed to close",
+			lg.Error("Failed to close",
 				"error", err)
 		}
 	}()
 
 	if err = psql.DummyMigration(context.Background()); err != nil {
-		logger.Error("Failed to migrate",
+		lg.Error("Failed to migrate",
 			"error", err)
-
 		return
 	}
 
-	_, err = psql.Exec("INSERT INTO mens (name, description, price) "+
-		"VALUES ($1, $2, $3)", "den", "kvn", 100)
-
-	if err != nil {
-		logger.Error("Failed to insert")
-	}
-
-	httpServer := server.NewServer(logger, httpPort)
+	httpServer := server.NewServer(lg, httpPort)
 	if err := httpServer.Run(); err != nil {
-		logger.Error("Server failed to start", err)
+		lg.Error("Server failed to start", err)
 		return
 	}
-	logger.Info("Shutting down")
+	lg.Info("Shutting down")
 
 }
