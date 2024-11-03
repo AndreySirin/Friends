@@ -2,44 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product List</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
-    </style>
+    <title>Products</title>
 </head>
 <body>
-<h1>Product List</h1>
-<table>
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Hobby</th>
-        <th>Price</th>
-    </tr>
-    </thead>
-    <tbody>
+<h1>Products</h1>
+<ul>
     {{range .}}
-    <tr>
-        <td>{{.ID}}</td>
-        <td>{{.Name}}</td>
-        <td>{{.Hobby}}</td>
-        <td>{{.Price}}</td>
-    </tr>
+    <li>
+        <h2>{{.Name}}</h2>
+        <p>Hobby: {{.Hobby}}</p>
+        <p>Price: ${{.Price}}</p>
+        <!-- Вставка изображения в формате Base64 -->
+        <img src="data:image/jpeg;base64,{{.ImageBase64}}" alt="{{.Name}}" style="width:200px;height:200px;">
+    </li>
     {{end}}
-    </tbody>
-</table>
+</ul>
 </body>
 </html>

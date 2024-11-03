@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	_ "errors"
 	"fmt"
@@ -56,7 +57,8 @@ func (s *Storage) DummyMigration(ctx context.Context) error {
 		id 		SERIAL PRIMARY KEY,
 		name 	VARCHAR (255) NOT NULL,
     	hobby	VARCHAR (255) NOT NULL,
-		price 	INT
+		price 	INT,
+    	image_data BYTEA NOT NULL
 		);`
 
 	if _, err := s.db.ExecContext(ctx, query); err != nil {
@@ -68,60 +70,52 @@ func (s *Storage) DummyMigration(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) PostNewUser(query string, args ...any) error {
-	_, err := s.db.ExecContext(context.Background(), query, args...)
-	if err != nil {
-		slog.Error("err", err)
+func (s *Storage) AddProductFriend(ctx context.Context, productFriend ProductFriend) error {
+	query := `INSERT INTO products (name, hobby, price, image_data) VALUES ($1, $2, $3, $4)`
+	if _, err := s.db.ExecContext(
+		ctx,
+		query,
+		productFriend.Name,
+		productFriend.Hobby,
+		productFriend.Price,
+		productFriend.ImageData,
+	); err != nil {
+		return fmt.Errorf("add product friend: %v", err)
 	}
 	return nil
 }
-
-//запрос на добавление нового пользователя
-//query := `INSERT INTO products (name, hobby, price) VALUES ($1, $2, $3)`
-//name := "jorg"
-//hobby := "coffemania"
-//price := 430
-//err = psql.PostNewUser(query, name, hobby, price)
-//if err != nil {
-//	lg.Error("Failed to create new user")
-//}
 
 func (s *Storage) GetQuery(query string, args ...any) (*sql.Rows, error) {
 	return s.db.QueryContext(context.Background(), query, args...)
 }
 
 type Product struct {
-	ID    int
-	Name  string
-	Hobby string
-	Price int
+	ID          int
+	Name        string
+	Hobby       string
+	Price       int
+	ImageData   []byte
+	ImageBase64 string
 }
 
 func (s *Storage) GetZZZ() ([]Product, error) {
-
-	if s == nil {
-		slog.Error("Storage is nil")
-		return nil, fmt.Errorf("storage is nil")
-	}
 
 	rows, err := s.GetQuery(`SELECT * FROM products`)
 	if err != nil {
 		slog.Error("Failed to execute query in GetZZZ", err)
 		return nil, err
 	}
-	if rows == nil {
-		slog.Error("GetQuery returned nil rows")
-		return nil, fmt.Errorf("no rows returned")
-	}
+
 	defer rows.Close()
 
 	var product []Product
 	for rows.Next() {
 		var p Product
-		if err := rows.Scan(&p.ID, &p.Name, &p.Hobby, &p.Price); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Hobby, &p.Price, &p.ImageData); err != nil {
 			slog.Error("Failed to scan row in GetZZZ", err)
 			return nil, err
 		}
+		p.ImageBase64 = base64.StdEncoding.EncodeToString(p.ImageData)
 		product = append(product, p)
 	}
 	if err := rows.Err(); err != nil {
@@ -131,24 +125,9 @@ func (s *Storage) GetZZZ() ([]Product, error) {
 	return product, nil
 }
 
-//запрос в таблицу на получение данных
-//rows, err := psql.GetQuery("SELECT * FROM products WHERE id=$1", "1")
-//if err != nil {
-//lg.Error("Failed to get products")
-//return
-//}
-//defer rows.Close()
-//
-//for rows.Next() {
-//var id int
-//var name string
-//var hobby string
-//var price int
-//if err = rows.Scan(&id, &name, &hobby, &price); err != nil {
-//lg.Error("Failed to scan", err)
-//}
-//fmt.Print(id, name, hobby, price)
-//}
+func (s *Storage) EncodeImageToBase64(img []byte) string {
+	return base64.StdEncoding.EncodeToString(img)
+}
 
 func (s *Storage) Getdelete(id int) error {
 	result, err := s.db.ExecContext(context.Background(), `DELETE FROM products WHERE id=$1`, id)
