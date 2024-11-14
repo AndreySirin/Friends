@@ -30,7 +30,7 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 		r.Route("/v1", func(r chi.Router) {
 			r.Get("/friends", s.friendHandler)
 			r.Get("/menu", s.priceHandler)
-			r.Post("/friend",//fixme )
+			//	r.Post("/friend",//fixme )
 			//TODO написать метод который добавляет данные в базу данных
 		})
 	})
@@ -43,7 +43,7 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 }
 
 func (s *Server) friendHandler(w http.ResponseWriter, r *http.Request) {
-	home, err := template.ParseFiles("cmd/htmlFile/home.html")
+	home, err := template.ParseFiles("htmlFile/home.html")
 	if err != nil {
 		http.Error(w, "error loading home", http.StatusInternalServerError)
 		return
@@ -61,8 +61,7 @@ func (s *Server) priceHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error getting data from storage", http.StatusInternalServerError)
 		return
 	}
-
-	menu, err := template.ParseFiles("cmd/htmlFile/price.html")
+	menu, err := template.ParseFiles("htmlFile/price.html")
 	if err != nil {
 		http.Error(w, "error loading price", http.StatusInternalServerError)
 		return
@@ -81,4 +80,3 @@ func (s *Server) Run() error {
 	s.log.Info(fmt.Sprintf("Listening on %s", s.server.Addr))
 	return s.server.ListenAndServe()
 }
-

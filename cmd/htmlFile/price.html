@@ -2,20 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Products</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            margin-top: 20px;
+            color: #333;
+        }
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 1em;
+            text-align: left;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #6c7ae0;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
 </head>
 <body>
-<h1>Products</h1>
-<ul>
-    {{range .}}
-    <li>
-        <h2>{{.Name}}</h2>
-        <p>Hobby: {{.Hobby}}</p>
-        <p>Price: ${{.Price}}</p>
-        <!-- Вставка изображения в формате Base64 -->
-        <img src="data:image/jpeg;base64,{{.ImageBase64}}" alt="{{.Name}}" style="width:200px;height:200px;">
-    </li>
-    {{end}}
-</ul>
+
+<h1>Product List</h1>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Hobby</th>
+        <th>Price</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Dynamic rows will be inserted here -->
+    </tbody>
+</table>
+
 </body>
 </html>

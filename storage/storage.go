@@ -3,11 +3,11 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"encoding/base64"
 	"errors"
 	_ "errors"
 	"fmt"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	migrate "github.com/rubenv/sql-migrate"
 	"log/slog"
 	"net/url"
 )
@@ -52,37 +52,42 @@ func (s *Storage) Close() error {
 	return s.db.Close()
 }
 
-func (s *Storage) DummyMigration(ctx context.Context) error {
-	query := `CREATE TABLE IF NOT EXISTS products(
-		id 		SERIAL PRIMARY KEY,
-		name 	VARCHAR (255) NOT NULL,
-    	hobby	VARCHAR (255) NOT NULL,
-		price 	INT,
-    	image_data BYTEA NOT NULL
-		);`
-
-	if _, err := s.db.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("create table: %v", err)
-	}
-
-	s.lg.Info("Migration is succeed...")
-
-	return nil
-}
-
 func (s *Storage) AddProductFriend(ctx context.Context, productFriend ProductFriend) error {
-	query := `INSERT INTO products (name, hobby, price, image_data) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO products (name, hobby, price) VALUES ($1, $2, $3)`
 	if _, err := s.db.ExecContext(
 		ctx,
 		query,
 		productFriend.Name,
 		productFriend.Hobby,
 		productFriend.Price,
-		productFriend.ImageData,
 	); err != nil {
 		return fmt.Errorf("add product friend: %v", err)
 	}
 	return nil
+}
+
+func (s *Storage) MigriteUP() (int, error) {
+	migrations := &migrate.FileMigrationSource{
+		Dir: "dirMigrite",
+	}
+	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Up)
+	if err != nil {
+		s.lg.Error("ошибка", err)
+		return n, err
+	}
+	return n, nil
+}
+
+func (s *Storage) MigriteDOWN() (int, error) {
+	migrations := &migrate.FileMigrationSource{
+		Dir: "dirMigrite",
+	}
+	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Down)
+	if err != nil {
+		s.lg.Error("ошибка", err)
+		return n, err
+	}
+	return n, nil
 }
 
 func (s *Storage) GetQuery(query string, args ...any) (*sql.Rows, error) {
@@ -90,12 +95,10 @@ func (s *Storage) GetQuery(query string, args ...any) (*sql.Rows, error) {
 }
 
 type Product struct {
-	ID          int
-	Name        string
-	Hobby       string
-	Price       int
-	ImageData   []byte
-	ImageBase64 string
+	ID    int
+	Name  string
+	Hobby string
+	Price int
 }
 
 func (s *Storage) GetZZZ() ([]Product, error) {
@@ -111,11 +114,10 @@ func (s *Storage) GetZZZ() ([]Product, error) {
 	var product []Product
 	for rows.Next() {
 		var p Product
-		if err := rows.Scan(&p.ID, &p.Name, &p.Hobby, &p.Price, &p.ImageData); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Hobby, &p.Price); err != nil {
 			slog.Error("Failed to scan row in GetZZZ", err)
 			return nil, err
 		}
-		p.ImageBase64 = base64.StdEncoding.EncodeToString(p.ImageData)
 		product = append(product, p)
 	}
 	if err := rows.Err(); err != nil {
@@ -123,10 +125,6 @@ func (s *Storage) GetZZZ() ([]Product, error) {
 		return nil, err
 	}
 	return product, nil
-}
-
-func (s *Storage) EncodeImageToBase64(img []byte) string {
-	return base64.StdEncoding.EncodeToString(img)
 }
 
 func (s *Storage) Getdelete(id int) error {
