@@ -9,11 +9,13 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"strconv"
 )
 
 type zeter interface {
 	GetZZZ() ([]storage.ProductFriend, error)
 	AddProductFriend(context.Context, *storage.ProductFriend) error
+	DeleteProductFriend(int) error
 }
 
 type Server struct {
@@ -33,8 +35,8 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 		r.Route("/v1", func(r chi.Router) {
 			r.Get("/main", s.mainHandler)
 			r.Get("/price", s.priceHandler)
-			r.Post("/PostNewUser", s.PostNewUser)
-			//TODO написать метод который добавляет данные в базу данных
+			r.Post("/PostNewUser", s.PostUserHandler)
+			r.Delete("/DeleteUser/{id}", s.DeleteUserHandler)
 		})
 	})
 
@@ -77,7 +79,7 @@ func (s *Server) priceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) PostNewUser(w http.ResponseWriter, r *http.Request) {
+func (s *Server) PostUserHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -92,6 +94,24 @@ func (s *Server) PostNewUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode((map[string]int{
 		"id": prod.ID,
 	}))
+
+}
+func (s *Server) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	productID := chi.URLParam(r, "id")
+
+	id, err := strconv.Atoi(productID)
+	if err != nil {
+		http.Error(w, "invalid product ID", http.StatusBadRequest)
+		return
+	}
+
+	err = s.z.DeleteProductFriend(id)
+	if err != nil {
+		http.Error(w, "error deleting product", http.StatusInternalServerError)
+		return
+	}
+	w.Write([]byte("successful delete"))
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) Run() error {
