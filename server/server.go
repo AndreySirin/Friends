@@ -2,6 +2,8 @@ package server
 
 import (
 	"Friends/storage"
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"html/template"
@@ -10,7 +12,8 @@ import (
 )
 
 type zeter interface {
-	GetZZZ() ([]storage.Product, error)
+	GetZZZ() ([]storage.ProductFriend, error)
+	AddProductFriend(context.Context, *storage.ProductFriend) error
 }
 
 type Server struct {
@@ -28,9 +31,9 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 	r := chi.NewRouter()
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
-			r.Get("/friends", s.friendHandler)
-			r.Get("/menu", s.priceHandler)
-			//	r.Post("/friend",//fixme )
+			r.Get("/main", s.mainHandler)
+			r.Get("/price", s.priceHandler)
+			r.Post("/PostNewUser", s.PostNewUser)
 			//TODO написать метод который добавляет данные в базу данных
 		})
 	})
@@ -42,8 +45,8 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 	return s
 }
 
-func (s *Server) friendHandler(w http.ResponseWriter, r *http.Request) {
-	home, err := template.ParseFiles("htmlFile/home.html")
+func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
+	home, err := template.ParseFiles("htmlFile/main.html")
 	if err != nil {
 		http.Error(w, "error loading home", http.StatusInternalServerError)
 		return
@@ -72,7 +75,23 @@ func (s *Server) priceHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "error rendering price", http.StatusInternalServerError)
 	}
+}
 
+func (s *Server) PostNewUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+	var prod *storage.ProductFriend
+	if err := json.NewDecoder(r.Body).Decode(&prod); err != nil {
+		http.Error(w, "error decoding product", http.StatusBadRequest)
+	}
+	if err := s.z.AddProductFriend(context.Background(), prod); err != nil {
+		http.Error(w, "error adding product", http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode((map[string]int{
+		"id": prod.ID,
+	}))
 }
 
 func (s *Server) Run() error {
