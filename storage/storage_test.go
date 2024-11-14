@@ -9,7 +9,6 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"log"
-	"os"
 	"testing"
 )
 
@@ -47,22 +46,16 @@ func TestStorage(t *testing.T) {
 	st, err := storage.New(lg, username, password, "0.0.0.0:"+port, database)
 	require.NoError(t, err)
 
-	err = st.DummyMigration(ctx)
-	require.NoError(t, err)
+	//dir, err := os.Getwd()
+	//require.NoError(t, err)
 
-	dir, err := os.Getwd()
-	require.NoError(t, err)
-
-	imgPath := dir + "/img/r.jpeg"
-	imgData, err := os.ReadFile(imgPath)
 	require.NoError(t, err)
 
 	req := storage.ProductFriend{
-		ID:        1,
-		Name:      "ivan",
-		Hobby:     "sport",
-		Price:     1,
-		ImageData: imgData,
+		ID:    1,
+		Name:  "ivan",
+		Hobby: "sport",
+		Price: 1,
 	}
 
 	err = st.AddProductFriend(ctx, req)

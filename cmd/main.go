@@ -1,28 +1,28 @@
 package main
 
 import (
+	"Friends/cmd/config"
 	"Friends/logg"
 	"Friends/server"
 	"Friends/storage"
-	"context"
 	_ "github.com/jackc/pgx/v5/stdlib"
-)
-
-// TODO вынести переменные в config.YAML
-const (
-	address  = "127.0.0.1:5432"
-	username = "myuser"
-	password = "mypassword"
-	database = "mydatabase"
-
-	httpPort = ":8000"
 )
 
 func main() {
 	lg := logg.New()
 	lg.Info("start server")
 
-	psql, err := storage.New(lg, username, password, address, database)
+	confg, err := config.LoadConfig("config/config.yaml")
+	if err != nil {
+		lg.Error("load config err", err)
+	}
+
+	psql, err := storage.New(lg,
+		confg.App.Development.Database.Username,
+		confg.App.Development.Database.Password,
+		confg.App.Development.Database.Address,
+		confg.App.Development.Database.NameDatabase,
+	)
 	if err != nil {
 		lg.Error("Failed to connect to database",
 			"error", err)
@@ -35,14 +35,8 @@ func main() {
 				"error", err)
 		}
 	}()
-	//TODO прикрутить нормальную миграцию https://github.com/rubenv/sql-migrate
-	if err = psql.DummyMigration(context.Background()); err != nil {
-		lg.Error("Failed to migrate",
-			"error", err)
-		return
-	}
 
-	httpServer := server.NewServer(lg, httpPort, psql)
+	httpServer := server.NewServer(lg, confg.App.Development.Server.HTTPPort, psql)
 	if err := httpServer.Run(); err != nil {
 		lg.Error("Server failed to start", err)
 		return
