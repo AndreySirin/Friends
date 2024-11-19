@@ -6,6 +6,9 @@ import (
 	"Friends/server"
 	"Friends/storage"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -14,7 +17,7 @@ func main() {
 
 	confg, err := config.LoadConfig("config/config.yaml")
 	if err != nil {
-		lg.Error("load config err", err)
+		lg.Error("load config err", "error", err)
 	}
 
 	psql, err := storage.New(lg,
@@ -35,13 +38,29 @@ func main() {
 				"error", err)
 		}
 	}()
-
+	psql.MigriteUP()
 	httpServer := server.NewServer(lg, confg.App.Development.Server.HTTPPort, psql)
-	if err := httpServer.Run(); err != nil {
-		lg.Error("Server failed to start", err)
-		return
-	}
-	lg.Info("Shutting down")
-	//TODO реализовать gracefull shutdown
 
+	go func() {
+
+		if err = httpServer.Run(); err != nil {
+			lg.Error("Server failed to start", "error", err)
+			return
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan struct{})
+
+	go func() {
+		<-stop
+		err = httpServer.ShutDown()
+		if err != nil {
+			lg.Error("Failed to shutdown gracefully", "error", err)
+		}
+		lg.Info("Server gracefully stopped", "error", err)
+		close(done)
+	}()
+	<-done
 }
