@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Friends/cmd/config"
+	"Friends/config"
 	"Friends/logg"
 	"Friends/server"
 	"Friends/storage"
