@@ -67,6 +67,21 @@ func (s *Storage) AddProductFriend(ctx context.Context, productFriend *ProductFr
 	return nil
 }
 
+func (s *Storage) UpdateProductFriend(ctx context.Context, productFriend *ProductFriend) error {
+	query := `UPDATE products SET name=$1, hobby=$2, price=$3 WHERE id=$4`
+	_, err := s.db.ExecContext(
+		ctx,
+		query,
+		productFriend.Name,
+		productFriend.Hobby,
+		productFriend.Price,
+		productFriend.ID)
+	if err != nil {
+		return fmt.Errorf("update product friend to db: %v", err)
+	}
+	return nil
+}
+
 func (s *Storage) DeleteProductFriend(id int) error {
 	result, err := s.db.ExecContext(context.Background(), `DELETE FROM products WHERE id=$1`, id)
 	if err != nil {

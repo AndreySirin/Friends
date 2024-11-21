@@ -17,6 +17,7 @@ type zeter interface {
 	GetZZZ() ([]storage.ProductFriend, error)
 	AddProductFriend(context.Context, *storage.ProductFriend) error
 	DeleteProductFriend(int) error
+	UpdateProductFriend(context.Context, *storage.ProductFriend) error
 }
 
 type Server struct {
@@ -36,8 +37,10 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 		r.Route("/v1", func(r chi.Router) {
 			r.Get("/main", s.mainHandler)
 			r.Get("/price", s.priceHandler)
-			r.Post("/PostNewUser", s.PostUserHandler)
+			r.Post("/AddNewUser", s.AddUserHandler)
+			r.Post("/UpdateUser", s.UpdateUser)
 			r.Delete("/DeleteUser/{id}", s.DeleteUserHandler)
+
 		})
 	})
 
@@ -80,7 +83,7 @@ func (s *Server) priceHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) PostUserHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -92,11 +95,32 @@ func (s *Server) PostUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error adding product", http.StatusInternalServerError)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode((map[string]int{
-		"id": prod.ID,
-	}))
 
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":      prod.ID,
+		"message": "Product added successfully",
+	})
 }
+
+func (s *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+	var prod *storage.ProductFriend
+	if err := json.NewDecoder(r.Body).Decode(&prod); err != nil {
+		http.Error(w, "error decoding product", http.StatusBadRequest)
+	}
+	if err := s.z.UpdateProductFriend(context.Background(), prod); err != nil {
+		http.Error(w, "error updating product", http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":      prod.ID,
+		"message": "Product updated successfully",
+	})
+}
+
 func (s *Server) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	productID := chi.URLParam(r, "id")
 
