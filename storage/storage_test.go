@@ -1,15 +1,16 @@
 package storage_test
 
 import (
-	"Friends/logg"
-	"Friends/storage"
 	"context"
 	"fmt"
+	"log"
+	"testing"
+
+	"github.com/AndreySirin/Friends/logg"
+	"github.com/AndreySirin/Friends/storage"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"log"
-	"testing"
 )
 
 const (
@@ -34,9 +35,9 @@ func TestStorage(t *testing.T) {
 			log.Printf("failed to terminate container: %s", err)
 		}
 	}()
-	//ip, err := postgresContainer.ContainerIP(ctx)
-	//require.NoError(t, err)
-	//fmt.Println(ip)
+	// ip, err := postgresContainer.ContainerIP(ctx)
+	// require.NoError(t, err)
+	// fmt.Println(ip)
 
 	network, err := postgresContainer.Inspect(ctx)
 	require.NoError(t, err)
@@ -46,8 +47,8 @@ func TestStorage(t *testing.T) {
 	st, err := storage.New(lg, username, password, "0.0.0.0:"+port, database)
 	require.NoError(t, err)
 
-	//dir, err := os.Getwd()
-	//require.NoError(t, err)
+	// dir, err := os.Getwd()
+	// require.NoError(t, err)
 
 	require.NoError(t, err)
 
@@ -58,6 +59,6 @@ func TestStorage(t *testing.T) {
 		Price: 1,
 	}
 
-	err = st.AddProductFriend(ctx, req)
+	err = st.AddProductFriend(ctx, &req)
 	require.NoError(t, err)
 }

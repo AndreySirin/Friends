@@ -1,14 +1,15 @@
 package main
 
 import (
-	"Friends/config"
-	"Friends/logg"
-	"Friends/server"
-	"Friends/storage"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/AndreySirin/Friends/config"
+	"github.com/AndreySirin/Friends/logg"
+	"github.com/AndreySirin/Friends/server"
+	"github.com/AndreySirin/Friends/storage"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
@@ -38,11 +39,15 @@ func main() {
 				"error", err)
 		}
 	}()
-	psql.MigriteUP()
+
+	if _, err = psql.MigriteUP(); err != nil {
+		lg.Error("Failed to migrate", "error", err.Error())
+		return
+	}
+
 	httpServer := server.NewServer(lg, confg.App.Development.Server.HTTPPort, psql)
 
 	go func() {
-
 		if err = httpServer.Run(); err != nil {
 			lg.Error("Server failed to start", "error", err)
 			return

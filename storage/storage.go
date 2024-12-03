@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	_ "errors"
 	"fmt"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	migrate "github.com/rubenv/sql-migrate"
 	"log/slog"
 	"net/url"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
+	migrate "github.com/rubenv/sql-migrate"
 )
 
 const moduleName = "storage"
@@ -98,10 +98,9 @@ func (s *Storage) DeleteProductFriend(id int) error {
 }
 
 func (s *Storage) GetZZZ() ([]ProductFriend, error) {
-
 	rows, err := s.db.Query(`SELECT * FROM products`)
 	if err != nil {
-		slog.Error("Failed to execute query in GetZZZ", err)
+		slog.Error("Failed to execute query in GetZZZ", "error", err)
 		return nil, err
 	}
 
@@ -111,13 +110,13 @@ func (s *Storage) GetZZZ() ([]ProductFriend, error) {
 	for rows.Next() {
 		var p ProductFriend
 		if err := rows.Scan(&p.ID, &p.Name, &p.Hobby, &p.Price); err != nil {
-			slog.Error("Failed to scan row in GetZZZ", err)
+			slog.Error("Failed to scan row in GetZZZ", "error", err)
 			return nil, err
 		}
 		product = append(product, p)
 	}
 	if err := rows.Err(); err != nil {
-		slog.Error("Error iterating rows in GetZZZ", err)
+		slog.Error("Error iterating rows in GetZZZ", "error", err)
 		return nil, err
 	}
 	return product, nil
@@ -129,7 +128,7 @@ func (s *Storage) MigriteUP() (int, error) {
 	}
 	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Up)
 	if err != nil {
-		s.lg.Error("ошибка", err)
+		s.lg.Error("ошибка", "error", err)
 		return n, err
 	}
 	return n, nil
@@ -141,7 +140,7 @@ func (s *Storage) MigriteDOWN() (int, error) {
 	}
 	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Down)
 	if err != nil {
-		s.lg.Error("ошибка", err)
+		s.lg.Error("ошибка", "error", err)
 		return n, err
 	}
 	return n, nil
