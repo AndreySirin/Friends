@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/AndreySirin/Friends/storage"
+	"github.com/AndreySirin/Friends/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
 

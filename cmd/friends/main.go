@@ -5,10 +5,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/AndreySirin/Friends/config"
-	"github.com/AndreySirin/Friends/logg"
-	"github.com/AndreySirin/Friends/server"
-	"github.com/AndreySirin/Friends/storage"
+	"github.com/AndreySirin/Friends/internal/config"
+	"github.com/AndreySirin/Friends/internal/logg"
+	"github.com/AndreySirin/Friends/internal/server"
+	"github.com/AndreySirin/Friends/internal/storage"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -16,16 +16,18 @@ func main() {
 	lg := logg.New()
 	lg.Info("start server")
 
-	confg, err := config.LoadConfig("config/config.yaml")
+	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		lg.Error("load config err", "error", err)
+
+		return
 	}
 
 	psql, err := storage.New(lg,
-		confg.App.Development.Database.Username,
-		confg.App.Development.Database.Password,
-		confg.App.Development.Database.Address,
-		confg.App.Development.Database.NameDatabase,
+		cfg.App.Development.Database.Username,
+		cfg.App.Development.Database.Password,
+		cfg.App.Development.Database.Address,
+		cfg.App.Development.Database.NameDatabase,
 	)
 	if err != nil {
 		lg.Error("Failed to connect to database",
@@ -45,7 +47,7 @@ func main() {
 		return
 	}
 
-	httpServer := server.NewServer(lg, confg.App.Development.Server.HTTPPort, psql)
+	httpServer := server.NewServer(lg, cfg.App.Development.Server.HTTPPort, psql)
 
 	go func() {
 		if err = httpServer.Run(); err != nil {

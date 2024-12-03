@@ -6,8 +6,8 @@ import (
 	"log"
 	"testing"
 
-	"github.com/AndreySirin/Friends/logg"
-	"github.com/AndreySirin/Friends/storage"
+	"github.com/AndreySirin/Friends/internal/logg"
+	storage2 "github.com/AndreySirin/Friends/internal/storage"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -44,7 +44,7 @@ func TestStorage(t *testing.T) {
 	port := network.NetworkSettings.Ports["5432/tcp"][0].HostPort
 	fmt.Println(port)
 
-	st, err := storage.New(lg, username, password, "0.0.0.0:"+port, database)
+	st, err := storage2.New(lg, username, password, "0.0.0.0:"+port, database)
 	require.NoError(t, err)
 
 	// dir, err := os.Getwd()
@@ -52,7 +52,7 @@ func TestStorage(t *testing.T) {
 
 	require.NoError(t, err)
 
-	req := storage.ProductFriend{
+	req := storage2.ProductFriend{
 		ID:    1,
 		Name:  "ivan",
 		Hobby: "sport",
