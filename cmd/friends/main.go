@@ -16,7 +16,7 @@ func main() {
 	lg := logg.New()
 	lg.Info("start server")
 
-	cfg, err := config.LoadConfig("config.yaml")
+	cfg, err := config.LoadConfig(lg, "config.yaml")
 	if err != nil {
 		lg.Error("load config err", "error", err)
 
