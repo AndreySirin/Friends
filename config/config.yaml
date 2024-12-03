@@ -1,0 +1,28 @@
+
+app:
+  name: "MyApp"
+  version: "1.0.0"
+
+  development:
+    server:
+
+      httpPort: ":8080"
+
+    database:
+
+      address: "127.0.0.1:5432"
+      username: "andrey"
+      password: "andrey"
+      nameDatabase: "database"
+
+      dialect: postgres
+      Datasource: "postgres://andrey:andrey@127.0.0.1:5432/database?sslmode=disable"
+      dir: dirMigrite # Папка, где будут храниться файлы миграций
+      table: migrations # Таблица для записи состояния миграций
+
+
+
+
+
+
+
