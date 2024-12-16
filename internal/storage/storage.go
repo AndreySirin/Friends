@@ -5,13 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	migrate "github.com/rubenv/sql-migrate"
 	"log/slog"
 	"net/url"
-)
 
-const moduleName = "storage"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	migrate "github.com/rubenv/sql-migrate"
+)
 
 type Storage struct {
 	lg *slog.Logger
@@ -36,13 +35,12 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("init db: %v", err)
 	}
-
 	if err = sqlDB.Ping(); err != nil {
 		return nil, fmt.Errorf("ping db: %v", err)
 	}
 
 	return &Storage{
-		lg: lg.With("module", moduleName),
+		lg: lg.With("module", "storage"),
 		db: sqlDB,
 	}, nil
 }
@@ -84,11 +82,11 @@ func (s *Storage) UpdateProductFriend(ctx context.Context, productFriend *Produc
 func (s *Storage) DeleteProductFriend(id int) error {
 	result, err := s.db.ExecContext(context.Background(), `DELETE FROM products WHERE id=$1`, id)
 	if err != nil {
-		slog.Error("err")
+		s.lg.Error("err")
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		slog.Error("err")
+		s.lg.Error("err")
 	}
 	if rowsAffected == 0 {
 		return errors.New("no products found")
@@ -96,11 +94,10 @@ func (s *Storage) DeleteProductFriend(id int) error {
 	return nil
 }
 
-func (s *Storage) GetZZZ() ([]ProductFriend, error) {
-
+func (s *Storage) GetQueryDB() ([]ProductFriend, error) {
 	rows, err := s.db.Query(`SELECT * FROM products`)
 	if err != nil {
-		slog.Error("Failed to execute query in GetZZZ", "error", err)
+		s.lg.Error("Failed to execute query in GetZZZ", "error", err)
 		return nil, err
 	}
 
@@ -110,13 +107,13 @@ func (s *Storage) GetZZZ() ([]ProductFriend, error) {
 	for rows.Next() {
 		var p ProductFriend
 		if err = rows.Scan(&p.ID, &p.Name, &p.Hobby, &p.Price); err != nil {
-			slog.Error("Failed to scan row in GetZZZ", "error", err)
+			s.lg.Error("Failed to scan row in GetZZZ", "error", err)
 			return nil, err
 		}
 		product = append(product, p)
 	}
 	if err = rows.Err(); err != nil {
-		slog.Error("Error iterating rows in GetZZZ", "error", err)
+		s.lg.Error("Error iterating rows in GetZZZ", "error", err)
 		return nil, err
 	}
 	return product, nil
@@ -124,7 +121,7 @@ func (s *Storage) GetZZZ() ([]ProductFriend, error) {
 
 func (s *Storage) MigriteUP() (int, error) {
 	migrations := &migrate.FileMigrationSource{
-		Dir: "dirMigrite",
+		Dir: "/home/andrey/GolandProjects/Friends/internal/dirMigrite",
 	}
 	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Up)
 	if err != nil {
@@ -136,7 +133,7 @@ func (s *Storage) MigriteUP() (int, error) {
 
 func (s *Storage) MigriteDOWN() (int, error) {
 	migrations := &migrate.FileMigrationSource{
-		Dir: "dirMigrite",
+		Dir: "/home/andrey/GolandProjects/Friends/internal/dirMigrite",
 	}
 	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Down)
 	if err != nil {

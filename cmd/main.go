@@ -1,21 +1,22 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/AndreySirin/Friends/internal/config"
 	"github.com/AndreySirin/Friends/internal/logg"
 	"github.com/AndreySirin/Friends/internal/server"
 	"github.com/AndreySirin/Friends/internal/storage"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
 	lg := logg.New()
 	lg.Info("start server")
-
-	cfg, err := config.LoadConfig(lg, "config/config.yaml")
+	///home/andrey/GolandProjects/Friends/
+	cfg, err := config.LoadConfig(lg, "config.yaml")
 	if err != nil {
 		lg.Error("load config err", "error", err)
 	}
@@ -27,8 +28,7 @@ func main() {
 		cfg.App.Development.Database.NameDatabase,
 	)
 	if err != nil {
-		lg.Error("Failed to connect to database",
-			"error", err)
+		lg.Error("Failed to connect to database", "error", err)
 		return
 	}
 
@@ -38,14 +38,15 @@ func main() {
 				"error", err)
 		}
 	}()
+
 	if _, err = psql.MigriteUP(); err != nil {
-		lg.Error("Failed to migrate", "error", err.Error())
+		lg.Error("Failed to migrate", "error", err)
 		return
 	}
+
 	httpServer := server.NewServer(lg, cfg.App.Development.Server.HTTPPort, psql)
 
 	go func() {
-
 		if err = httpServer.Run(); err != nil {
 			lg.Error("Server failed to start", "error", err)
 			return

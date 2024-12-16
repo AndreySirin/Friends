@@ -4,17 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/AndreySirin/Friends/storage"
-	"github.com/go-chi/chi/v5"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/AndreySirin/Friends/internal/storage"
+	"github.com/go-chi/chi/v5"
 )
 
 type zeter interface {
-	GetZZZ() ([]storage.ProductFriend, error)
+	GetQueryDB() ([]storage.ProductFriend, error)
 	AddProductFriend(context.Context, *storage.ProductFriend) error
 	DeleteProductFriend(int) error
 	UpdateProductFriend(context.Context, *storage.ProductFriend) error
@@ -28,7 +29,7 @@ type Server struct {
 
 func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 	s := &Server{
-		log: log.With("component", "server"),
+		log: log.With("module", "server"),
 		z:   z,
 	}
 
@@ -40,7 +41,6 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 			r.Post("/AddNewUser", s.AddUserHandler)
 			r.Post("/UpdateUser", s.UpdateUser)
 			r.Delete("/DeleteUser/{id}", s.DeleteUserHandler)
-
 		})
 	})
 
@@ -52,7 +52,7 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 }
 
 func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
-	home, err := template.ParseFiles("htmlFile/main.html")
+	home, err := template.ParseFiles("/home/andrey/GolandProjects/Friends/internal/htmlFile/main.html")
 	if err != nil {
 		http.Error(w, "error loading home", http.StatusInternalServerError)
 		return
@@ -64,18 +64,16 @@ func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) priceHandler(w http.ResponseWriter, r *http.Request) {
-
-	data, err := s.z.GetZZZ()
+	data, err := s.z.GetQueryDB()
 	if err != nil {
 		http.Error(w, "error getting data from storage", http.StatusInternalServerError)
 		return
 	}
-	menu, err := template.ParseFiles("htmlFile/price.html")
+	menu, err := template.ParseFiles("/home/andrey/GolandProjects/Friends/internal/htmlFile/price.html")
 	if err != nil {
 		http.Error(w, "error loading price", http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "text/html")
 	err = menu.Execute(w, data)
 	if err != nil {
@@ -115,8 +113,8 @@ func (s *Server) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if err := s.z.UpdateProductFriend(context.Background(), prod); err != nil {
 		http.Error(w, "error updating product", http.StatusInternalServerError)
 	}
-	w.Header().Set("Content-Type", "application/json")
 
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"id":      prod.ID,
 		"message": "Product updated successfully",
@@ -139,15 +137,14 @@ func (s *Server) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error deleting product", http.StatusInternalServerError)
 		return
 	}
+
 	if _, err = w.Write([]byte("successful delete")); err != nil {
 		http.Error(w, "error deleting product", http.StatusInternalServerError)
 	}
-
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) Run() error {
-
 	s.log.Info(fmt.Sprintf("Listening on %s", s.server.Addr))
 	return s.server.ListenAndServe()
 }

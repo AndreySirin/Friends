@@ -2,17 +2,23 @@ FROM golang:1.23.1 AS builder
 
 WORKDIR /app
 
-COPY . .
+COPY . ./
 
-RUN go mod tidy && go build -o myapp
+RUN go mod tidy
+
+WORKDIR /app/cmd
+
+RUN go build -o /app/friend
 
 
-FROM alpine:latest
+FROM ubuntu:latest
 
 WORKDIR /root
 
-COPY --from=builder /app/myapp .
+COPY --from=builder /app/friend .
+
+COPY config.yaml /root/
 
 EXPOSE 8080
 
-CMD ["./myapp"]
+CMD ["./friend"]
