@@ -52,7 +52,7 @@ func NewServer(log *slog.Logger, addr string, z zeter) *Server {
 }
 
 func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
-	home, err := template.ParseFiles("/home/andrey/GolandProjects/Friends/internal/htmlFile/main.html")
+	home, err := template.ParseFiles("/app/internal/htmlFile/main.html")
 	if err != nil {
 		http.Error(w, "error loading home", http.StatusInternalServerError)
 		return
@@ -69,7 +69,8 @@ func (s *Server) priceHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error getting data from storage", http.StatusInternalServerError)
 		return
 	}
-	menu, err := template.ParseFiles("/home/andrey/GolandProjects/Friends/internal/htmlFile/price.html")
+	//home/andrey/GolandProjects/Friends/internal/htmlFile/price.html
+	menu, err := template.ParseFiles("/app/internal/htmlFile/price.html")
 	if err != nil {
 		http.Error(w, "error loading price", http.StatusInternalServerError)
 		return
