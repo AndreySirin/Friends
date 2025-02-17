@@ -121,7 +121,7 @@ func (s *Storage) GetQueryDB() ([]ProductFriend, error) {
 
 func (s *Storage) MigriteUP() (int, error) {
 	migrations := &migrate.FileMigrationSource{
-		Dir: "/home/andrey/GolandProjects/Friends/internal/dirMigrite",
+		Dir: "/app/internal/dirMigrite",
 	}
 	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Up)
 	if err != nil {
@@ -133,7 +133,8 @@ func (s *Storage) MigriteUP() (int, error) {
 
 func (s *Storage) MigriteDOWN() (int, error) {
 	migrations := &migrate.FileMigrationSource{
-		Dir: "/home/andrey/GolandProjects/Friends/internal/dirMigrite",
+		///home/andrey/GolandProjects/Friends/internal/dirMigrite
+		Dir: "/app/internal/dirMigrite",
 	}
 	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Down)
 	if err != nil {
