@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/AndreySirin/Friends/internal/servisAuth"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,8 +16,8 @@ import (
 func main() {
 	lg := logg.New()
 	lg.Info("start server")
-	///home/andrey/GolandProjects/Friends/
-	cfg, err := config.LoadConfig(lg, "config.yaml")
+	configPath, err := config.PathConfig()
+	cfg, err := config.LoadConfig(lg, configPath)
 	if err != nil {
 		lg.Error("load config err", "error", err)
 	}
@@ -27,7 +28,7 @@ func main() {
 		cfg.App.Development.Database.Address,
 		cfg.App.Development.Database.NameDatabase,
 	)
-	if err != nil {
+	if err != nil || psql == nil {
 		lg.Error("Failed to connect to database", "error", err)
 		return
 	}
@@ -43,8 +44,18 @@ func main() {
 		lg.Error("Failed to migrate", "error", err)
 		return
 	}
-
-	httpServer := server.NewServer(lg, cfg.App.Development.Server.HTTPPort, psql)
+	hash := servisAuth.NewBcryptHasher(10)
+	secretSalt := []byte("my_secret_salt")
+	au := servisAuth.NewAuth(psql, hash, secretSalt)
+	if au == nil {
+		lg.Error("Failed to initialize Auth service")
+		return
+	}
+	httpServer := server.NewServer(lg, cfg.App.Development.Server.HTTPPort, psql, au)
+	if httpServer == nil {
+		lg.Error("Failed to initialize HTTP server")
+		return
+	}
 
 	go func() {
 		if err = httpServer.Run(); err != nil {
