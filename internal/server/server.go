@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/AndreySirin/Friends/internal/htmlFile"
 	"github.com/AndreySirin/Friends/internal/servisAuth"
@@ -17,11 +18,11 @@ import (
 type Server struct {
 	log          *slog.Logger
 	server       *http.Server
-	methodFriend storage.MethFriend
+	methodFriend storage.StorageFriend
 	auth         servisAuth.Authenticate
 }
 
-func NewServer(log *slog.Logger, addr string, friend storage.MethFriend, au *servisAuth.Auth) *Server {
+func NewServer(log *slog.Logger, addr string, friend storage.StorageFriend, au *servisAuth.Auth) *Server {
 	s := &Server{
 		log:          log.With("module", "server"),
 		methodFriend: friend,
@@ -31,8 +32,8 @@ func NewServer(log *slog.Logger, addr string, friend storage.MethFriend, au *ser
 	r := chi.NewRouter()
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
-			r.Post("/registration", s.singUn)
-			r.Post("/authentication", s.singIn)
+			r.Post("/registration", s.signUn)
+			r.Post("/authentication", s.signIn)
 			r.Get("/refreshToken", s.refresh)
 			r.Get("/main", s.mainHandler)
 
@@ -72,15 +73,35 @@ func (s *Server) ShutDown() error {
 func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
 	path, err := htmlFile.PathHtml("main.html")
 	if err != nil {
-		http.Error(w, "error loading path home.html", http.StatusInternalServerError)
+		s.writeJSONError(w, "Error loading path main.html", err, http.StatusInternalServerError)
+		return
 	}
 	home, err := template.ParseFiles(path)
 	if err != nil {
-		http.Error(w, "error loading home", http.StatusInternalServerError)
+		s.writeJSONError(w, "Error loading main template", err, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html")
 	if err = home.Execute(w, nil); err != nil {
-		http.Error(w, "error rendering home", http.StatusInternalServerError)
+		s.writeJSONError(w, "Error rendering main template", err, http.StatusInternalServerError)
 	}
+}
+
+func (s *Server) writeJSONError(w http.ResponseWriter, message string, err error, statusCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	resp := map[string]string{
+		"error":   message,
+		"details": err.Error(),
+	}
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (s *Server) writeJSONResponse(w http.ResponseWriter, data map[string]string, refreshToken string) {
+	w.Header().Set("Content-Type", "application/json")
+	if refreshToken != "" {
+		w.Header().Add("Set-Cookie", fmt.Sprintf("refresh-token=%s; HttpOnly", refreshToken))
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(data)
 }

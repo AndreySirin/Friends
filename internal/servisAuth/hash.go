@@ -1,6 +1,7 @@
 package servisAuth
 
 import (
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,7 +19,7 @@ func NewBcryptHasher(cost int) *BcryptHasher {
 func (h *BcryptHasher) Hash(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), h.cost)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error hashing password: %w", err)
 	}
 	return string(hash), nil
 }

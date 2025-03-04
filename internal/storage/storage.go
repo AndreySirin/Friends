@@ -12,11 +12,17 @@ import (
 	migrate "github.com/rubenv/sql-migrate"
 )
 
-type StorageMethod interface {
+type StorageUser interface {
 	CreatUser(context.Context, *User) error
 	GetUser(context.Context, string) (*User, error)
 	CreateRefreshToken(context.Context, *RefreshToken) error
 	GetRefreshToken(context.Context, string) (*RefreshToken, error)
+}
+type StorageFriend interface {
+	GetProductFriend() ([]ProductFriend, error)
+	AddProductFriend(context.Context, *ProductFriend) error
+	DeleteProductFriend(context.Context, int) error
+	UpdateProductFriend(context.Context, *ProductFriend) error
 }
 
 type Storage struct {
@@ -56,34 +62,17 @@ func (s *Storage) Close() error {
 	return s.db.Close()
 }
 
-func (s *Storage) MigriteUP() (int, error) {
+func (s *Storage) Migrate(bool migrate.MigrationDirection) error {
 	path, err := dirMigrite.PathMigrite()
 	if err != nil {
-		return 0, err
+		return fmt.Errorf("migration file path: %v", err)
 	}
 	migrations := &migrate.FileMigrationSource{
 		Dir: path,
 	}
-	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Up)
+	_, err = migrate.Exec(s.db, "postgres", migrations, bool)
 	if err != nil {
-		s.lg.Error("ошибка", "error", err)
-		return n, err
+		return fmt.Errorf("error for migrate: %v", err)
 	}
-	return n, nil
-}
-
-func (s *Storage) MigriteDOWN() (int, error) {
-	path, err := dirMigrite.PathMigrite()
-	if err != nil {
-		return 0, err
-	}
-	migrations := &migrate.FileMigrationSource{
-		Dir: path,
-	}
-	n, err := migrate.Exec(s.db, "postgres", migrations, migrate.Down)
-	if err != nil {
-		s.lg.Error("ошибка", "error", err)
-		return n, err
-	}
-	return n, nil
+	return nil
 }

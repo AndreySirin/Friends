@@ -57,7 +57,7 @@ func PathConfig() (string, error) {
 
 	exePath, err := os.Executable()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get executable path: %w", err)
 	}
 	exeDir := filepath.Dir(exePath)
 
@@ -65,7 +65,7 @@ func PathConfig() (string, error) {
 
 	absConfigPath, err := filepath.Abs(configPath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get absolute config path: %w", err)
 	}
 
 	return absConfigPath, nil

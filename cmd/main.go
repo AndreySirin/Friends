@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/AndreySirin/Friends/internal/servisAuth"
+	migrate "github.com/rubenv/sql-migrate"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,7 +41,7 @@ func main() {
 		}
 	}()
 
-	if _, err = psql.MigriteUP(); err != nil {
+	if err = psql.Migrate(migrate.Up); err != nil {
 		lg.Error("Failed to migrate", "error", err)
 		return
 	}

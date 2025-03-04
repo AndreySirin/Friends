@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/AndreySirin/Friends/internal/storage"
 	"io"
@@ -17,128 +16,92 @@ const (
 	ctxUserID CtxValue = iota
 )
 
-func (s *Server) singUn(w http.ResponseWriter, r *http.Request) {
-	reqBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		s.log.Error("singUp error")
+func (s *Server) signUn(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		s.writeJSONError(w, "Method Not Allowed", nil, http.StatusMethodNotAllowed)
 		return
 	}
+	defer r.Body.Close()
+
 	var inp storage.Registration
-	if err = json.Unmarshal(reqBytes, &inp); err != nil {
-		s.log.Error("signUp", err)
-		w.WriteHeader(http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&inp); err != nil {
+		s.writeJSONError(w, "Invalid request format", err, http.StatusBadRequest)
 		return
 	}
-	if err = inp.Validate(); err != nil {
-		s.log.Error("signUp", err)
-		w.WriteHeader(http.StatusBadRequest)
+
+	if err := inp.Validate(); err != nil {
+		s.writeJSONError(w, "Validation failed", err, http.StatusBadRequest)
 		return
 	}
-	if err = s.auth.SingUp((r.Context()), &inp); err != nil {
-		s.log.Error("singUp", err)
-		w.WriteHeader(http.StatusBadRequest)
+	if err := s.auth.SingUp(r.Context(), &inp); err != nil {
+		s.writeJSONError(w, "Registration failed", err, http.StatusBadRequest)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+
+	s.writeJSONResponse(w, map[string]string{"message": "Registration successful"}, "")
 }
 
-func (s *Server) singIn(w http.ResponseWriter, r *http.Request) {
+func (s *Server) signIn(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		s.writeJSONError(w, "Method Not Allowed", nil, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
 	reqBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		s.log.Error("singUp error")
+		s.writeJSONError(w, "Failed to read request body", err, http.StatusBadRequest)
 		return
 	}
 	var inp storage.Auth
 	if err = json.Unmarshal(reqBytes, &inp); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		resp := map[string]string{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		}
-		respBytes, _ := json.Marshal(resp)
-		w.Write(respBytes)
+		s.writeJSONError(w, "Invalid request format", err, http.StatusBadRequest)
 		return
 	}
 
 	if err = inp.Validate(); err != nil {
-		s.log.Error("signUp", err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		resp := map[string]string{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		}
-		respBytes, _ := json.Marshal(resp)
-		w.Write(respBytes)
+		s.writeJSONError(w, "Validation failed", err, http.StatusBadRequest)
 		return
 	}
 	refreshToken, token, err := s.auth.SingIn(r.Context(), inp.Email, inp.Password)
 	if err != nil {
-
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		resp := map[string]string{
-			"error":   "Invalid request format",
-			"details": err.Error(),
-		}
-		respBytes, _ := json.Marshal(resp)
-		w.Write(respBytes)
+		s.writeJSONError(w, "Authentication failed", err, http.StatusUnauthorized)
 		return
 	}
-	response, err := json.Marshal(map[string]string{
-		"token": token,
-	})
-	if err != nil {
-		s.log.Error("singIn", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Header().Add("Set-Cookie", fmt.Sprintf("refresh-token=%s; HttpOnly", refreshToken))
-	w.Header().Add("Content-Type", "application/json")
-	w.Write(response)
-
+	response := map[string]string{"token": token}
+	s.writeJSONResponse(w, response, refreshToken)
 }
 
 func (s *Server) refresh(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	cookie, err := r.Cookie("refresh-token")
 	if err != nil {
-		s.log.Error("refresh", err)
-		w.WriteHeader(http.StatusBadRequest)
+		s.writeJSONError(w, "Missing or invalid refresh token", err, http.StatusBadRequest)
 		return
 	}
 	refreshToken, token, err := s.auth.RefreshToken(r.Context(), cookie.Value)
 	if err != nil {
-		s.log.Error("refresh", err)
-		w.WriteHeader(http.StatusBadRequest)
+		s.writeJSONError(w, "Failed to refresh token", err, http.StatusUnauthorized)
 		return
 	}
-	response, err := json.Marshal(map[string]string{
-		"token": token,
-	})
-	if err != nil {
-		s.log.Error("refresh", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Header().Add("Set-Cookie", fmt.Sprintf("refresh-token=%s; HttpOnly", refreshToken))
-	w.Header().Add("Content-Type", "application/json")
-	w.Write(response)
+	s.writeJSONResponse(w, map[string]string{"token": token}, refreshToken)
 }
 
 func getTokenFromRequest(r *http.Request) (string, error) {
 	header := r.Header.Get("Authorization")
 	if header == "" {
-		return "", errors.New("empty auth header")
+		return "", fmt.Errorf("authorization header is empty")
 	}
 
-	headerParts := strings.Split(header, " ")
+	headerParts := strings.Fields(header)
 	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-		return "", errors.New("invalid auth header")
+		return "", fmt.Errorf("invalid authorization header format")
 	}
 
 	if len(headerParts[1]) == 0 {
-		return "", errors.New("token is empty")
+		return "", fmt.Errorf("token is empty")
 	}
 
 	return headerParts[1], nil
@@ -146,20 +109,19 @@ func getTokenFromRequest(r *http.Request) (string, error) {
 
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
 		token, err := getTokenFromRequest(r)
 		if err != nil {
-			s.log.Error("authMiddleware", err)
-			w.WriteHeader(http.StatusUnauthorized)
+			s.writeJSONError(w, "Invalid or missing token", err, http.StatusUnauthorized)
 			return
 		}
 
 		userId, err := s.auth.ParseToken(r.Context(), token)
 		if err != nil {
-			s.log.Error("authMiddleware", err)
-			w.WriteHeader(http.StatusUnauthorized)
+			s.writeJSONError(w, "Failed to parse token", err, http.StatusUnauthorized)
 			return
 		}
-
 		ctx := context.WithValue(r.Context(), ctxUserID, userId)
 		r = r.WithContext(ctx)
 

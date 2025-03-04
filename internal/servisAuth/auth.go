@@ -27,12 +27,12 @@ type Hasher interface {
 }
 
 type Auth struct {
-	auth storage.StorageMethod
+	auth storage.StorageUser
 	hash Hasher
 	Salt []byte
 }
 
-func NewAuth(auth storage.StorageMethod, hash Hasher, SecretSalt []byte) *Auth {
+func NewAuth(auth storage.StorageUser, hash Hasher, SecretSalt []byte) *Auth {
 	return &Auth{
 		auth: auth,
 		hash: hash,
@@ -54,7 +54,7 @@ func (a *Auth) SingUp(ctx context.Context, r *storage.Registration) error {
 		RegisteredAt: time.Now(),
 	}
 
-	if err := a.auth.CreatUser(ctx, &user); err != nil {
+	if err = a.auth.CreatUser(ctx, &user); err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
 	return nil
@@ -64,7 +64,7 @@ func (a *Auth) SingIn(ctx context.Context, email, password string) (string, stri
 
 	user, err := a.auth.GetUser(ctx, email)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to get user: %w", err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
@@ -77,7 +77,7 @@ func (a *Auth) SingIn(ctx context.Context, email, password string) (string, stri
 func (a *Auth) newRefreshToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 	return hex.EncodeToString(b), nil
 }
@@ -90,7 +90,7 @@ func (a *Auth) generateTokens(ctx context.Context, userId int) (string, string, 
 	})
 	token, err := t.SignedString(a.Salt)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to generate token: %w", err)
 	}
 	refreshToken, err := a.newRefreshToken()
 	if err != nil {
@@ -104,17 +104,17 @@ func (a *Auth) generateTokens(ctx context.Context, userId int) (string, string, 
 	}
 	err = a.auth.CreateRefreshToken(ctx, &RT)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to create refresh token: %w", err)
 	}
 
-	return refreshToken, token, err
+	return refreshToken, token, nil
 }
 
 func (a *Auth) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
 
 	RT, err := a.auth.GetRefreshToken(ctx, refreshToken)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to get refresh token: %w", err)
 	}
 	if RT.ExpiresAt.Before(time.Now()) {
 		return "", "", errors.New("refresh token is expired")
@@ -149,7 +149,7 @@ func (a *Auth) ParseToken(ctx context.Context, Token string) (int64, error) {
 
 	id, err := strconv.ParseInt(subject, 10, 64)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("invalid subject: %w", err)
 	}
 
 	return id, nil

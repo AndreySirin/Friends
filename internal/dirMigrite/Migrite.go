@@ -1,6 +1,7 @@
 package dirMigrite
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -9,7 +10,7 @@ func PathMigrite() (string, error) {
 
 	exePath, err := os.Executable()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error getting executable path: %v", err)
 	}
 	exeDir := filepath.Dir(exePath)
 
@@ -17,7 +18,7 @@ func PathMigrite() (string, error) {
 
 	absMigritePath, err := filepath.Abs(migritePath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error getting absolute path for migrite: %v", err)
 	}
 
 	return absMigritePath, nil

@@ -3,9 +3,9 @@
 
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    hobby VARCHAR(255) NOT NULL,
-    price INT
+    name VARCHAR(255) NOT NULL CHECK (LENGTH(name) >= 2),
+    hobby VARCHAR(255) NOT NULL CHECK (LENGTH(hobby) >= 2),
+    price INT NOT NULL CHECK(price !=0)
     );
 
 CREATE TABLE IF NOT EXISTS users (

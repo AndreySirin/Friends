@@ -43,8 +43,7 @@ func (s *Storage) CreatUser(ctx context.Context, user *User) error {
 	_, err := s.db.ExecContext(ctx, "INSERT INTO users (name,email,password,registeredAt)values($1,$2,$3,$4)",
 		user.Name, user.Email, user.Password, user.RegisteredAt)
 	if err != nil {
-		s.lg.Error("Error inserting user into database")
-		return err
+		return fmt.Errorf("inserting user into database: %w", err)
 	}
 	return nil
 }
@@ -55,9 +54,9 @@ func (s *Storage) GetUser(ctx context.Context, email string) (*User, error) {
 		Scan(&us.ID, &us.Name, &us.Email, &us.Password, &us.RegisteredAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			return nil, fmt.Errorf("user not found: %w", err)
 		}
-		return nil, err
+		return nil, fmt.Errorf("querying user: %w", err)
 	}
 	return &us, nil
 }
