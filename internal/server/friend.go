@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/AndreySirin/Friends/internal/htmlFile"
-	"github.com/AndreySirin/Friends/internal/storage"
-	"github.com/go-chi/chi/v5"
 	"html/template"
 	"net/http"
 	"strconv"
+
+	"github.com/AndreySirin/Friends/internal/storage"
+	"github.com/go-chi/chi/v5"
 )
 
 func (s *Server) priceHandler(w http.ResponseWriter, r *http.Request) {
@@ -18,12 +18,7 @@ func (s *Server) priceHandler(w http.ResponseWriter, r *http.Request) {
 		s.writeJSONError(w, "Error getting data from storage", err, http.StatusInternalServerError)
 		return
 	}
-	path, err := htmlFile.PathHtml("price.html")
-	if err != nil {
-		s.writeJSONError(w, "Error loading path price.html", err, http.StatusInternalServerError)
-		return
-	}
-	menu, err := template.ParseFiles(path)
+	menu, err := template.ParseFiles("/root/htmlFile/price.html")
 	if err != nil {
 		s.writeJSONError(w, "Error loading price template", err, http.StatusInternalServerError)
 		return

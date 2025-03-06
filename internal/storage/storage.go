@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/AndreySirin/Friends/internal/dirMigrite"
 	"log/slog"
 	"net/url"
 
@@ -63,14 +62,11 @@ func (s *Storage) Close() error {
 }
 
 func (s *Storage) Migrate(bool migrate.MigrationDirection) error {
-	path, err := dirMigrite.PathMigrite()
-	if err != nil {
-		return fmt.Errorf("migration file path: %v", err)
-	}
+
 	migrations := &migrate.FileMigrationSource{
-		Dir: path,
+		Dir: "/root/dirMigrite",
 	}
-	_, err = migrate.Exec(s.db, "postgres", migrations, bool)
+	_, err := migrate.Exec(s.db, "postgres", migrations, bool)
 	if err != nil {
 		return fmt.Errorf("error for migrate: %v", err)
 	}

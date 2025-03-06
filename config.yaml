@@ -10,12 +10,12 @@ app:
 
     database:
 
-      address: "localhost:5432"
+      address: "postgres:5432"
       username: "andrey"
       password: "andrey"
       nameDatabase: "database"
       dialect: postgres
-      Datasource: "postgres://andrey:andrey@localhost:5432/database?sslmode=disable"
+      Datasource: "postgres://andrey:andrey@postgres:5432/database?sslmode=disable"
       dir: dirMigrite # Папка, где будут храниться файлы миграций
       table: migrations # Таблица для записи состояния миграций
 

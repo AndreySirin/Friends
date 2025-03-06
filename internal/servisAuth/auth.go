@@ -6,11 +6,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/AndreySirin/Friends/internal/storage"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-	"strconv"
-	"time"
 )
 
 type Authenticate interface {
@@ -41,7 +42,6 @@ func NewAuth(auth storage.StorageUser, hash Hasher, SecretSalt []byte) *Auth {
 }
 
 func (a *Auth) SingUp(ctx context.Context, r *storage.Registration) error {
-
 	password, err := a.hash.Hash(r.Password)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
@@ -61,7 +61,6 @@ func (a *Auth) SingUp(ctx context.Context, r *storage.Registration) error {
 }
 
 func (a *Auth) SingIn(ctx context.Context, email, password string) (string, string, error) {
-
 	user, err := a.auth.GetUser(ctx, email)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get user: %w", err)
@@ -111,7 +110,6 @@ func (a *Auth) generateTokens(ctx context.Context, userId int) (string, string, 
 }
 
 func (a *Auth) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
-
 	RT, err := a.auth.GetRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get refresh token: %w", err)

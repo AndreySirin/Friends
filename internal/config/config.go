@@ -54,14 +54,13 @@ func LoadConfig(lg *slog.Logger, path string) (*Config, error) {
 }
 
 func PathConfig() (string, error) {
-
 	exePath, err := os.Executable()
 	if err != nil {
 		return "", fmt.Errorf("failed to get executable path: %w", err)
 	}
 	exeDir := filepath.Dir(exePath)
 
-	configPath := filepath.Join(exeDir, "..", "config.yaml")
+	configPath := filepath.Join(exeDir, "config.yaml")
 
 	absConfigPath, err := filepath.Abs(configPath)
 	if err != nil {

@@ -50,8 +50,6 @@ func TestStorage(t *testing.T) {
 	// dir, err := os.Getwd()
 	// require.NoError(t, err)
 
-	require.NoError(t, err)
-
 	req := storage.ProductFriend{
 		ID:    1,
 		Name:  "ivan",

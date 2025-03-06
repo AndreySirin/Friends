@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/go-playground/validator/v10"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
 var validate *validator.Validate
@@ -39,7 +40,6 @@ type Auth struct {
 func (a Auth) Validate() error { return validate.Struct(a) }
 
 func (s *Storage) CreatUser(ctx context.Context, user *User) error {
-
 	_, err := s.db.ExecContext(ctx, "INSERT INTO users (name,email,password,registeredAt)values($1,$2,$3,$4)",
 		user.Name, user.Email, user.Password, user.RegisteredAt)
 	if err != nil {

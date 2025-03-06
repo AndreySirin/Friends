@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/AndreySirin/Friends/internal/htmlFile"
-	"github.com/AndreySirin/Friends/internal/servisAuth"
 	"html/template"
 	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/AndreySirin/Friends/internal/servisAuth"
 	"github.com/AndreySirin/Friends/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
@@ -38,7 +37,6 @@ func NewServer(log *slog.Logger, addr string, friend storage.StorageFriend, au *
 			r.Get("/main", s.mainHandler)
 
 			r.With(s.authMiddleware).Group(func(r chi.Router) {
-
 				r.Get("/price", s.priceHandler)
 				r.Post("/AddNewUser", s.AddUserHandler)
 				r.Put("/UpdateUser", s.UpdateUser)
@@ -71,12 +69,8 @@ func (s *Server) ShutDown() error {
 }
 
 func (s *Server) mainHandler(w http.ResponseWriter, r *http.Request) {
-	path, err := htmlFile.PathHtml("main.html")
-	if err != nil {
-		s.writeJSONError(w, "Error loading path main.html", err, http.StatusInternalServerError)
-		return
-	}
-	home, err := template.ParseFiles(path)
+
+	home, err := template.ParseFiles("/root/htmlFile/main.html")
 	if err != nil {
 		s.writeJSONError(w, "Error loading main template", err, http.StatusInternalServerError)
 		return
@@ -94,7 +88,10 @@ func (s *Server) writeJSONError(w http.ResponseWriter, message string, err error
 		"error":   message,
 		"details": err.Error(),
 	}
-	json.NewEncoder(w).Encode(resp)
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		s.log.Error("error writing response", "error", err)
+	}
 }
 
 func (s *Server) writeJSONResponse(w http.ResponseWriter, data map[string]string, refreshToken string) {
@@ -103,5 +100,8 @@ func (s *Server) writeJSONResponse(w http.ResponseWriter, data map[string]string
 		w.Header().Add("Set-Cookie", fmt.Sprintf("refresh-token=%s; HttpOnly", refreshToken))
 	}
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		s.log.Error("error writing response", "error", err)
+	}
 }
