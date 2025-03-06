@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/AndreySirin/Friends/internal/storage"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/AndreySirin/Friends/internal/storage"
 )
 
 type CtxValue int
@@ -17,7 +18,6 @@ const (
 )
 
 func (s *Server) signUn(w http.ResponseWriter, r *http.Request) {
-
 	if r.Method != http.MethodPost {
 		s.writeJSONError(w, "Method Not Allowed", nil, http.StatusMethodNotAllowed)
 		return

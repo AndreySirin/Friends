@@ -1,8 +1,6 @@
 package main
 
 import (
-	"github.com/AndreySirin/Friends/internal/servisAuth"
-	migrate "github.com/rubenv/sql-migrate"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,14 +8,16 @@ import (
 	"github.com/AndreySirin/Friends/internal/config"
 	"github.com/AndreySirin/Friends/internal/logg"
 	"github.com/AndreySirin/Friends/internal/server"
+	"github.com/AndreySirin/Friends/internal/servisAuth"
 	"github.com/AndreySirin/Friends/internal/storage"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	migrate "github.com/rubenv/sql-migrate"
 )
 
 func main() {
 	lg := logg.New()
 	lg.Info("start server")
-	configPath, err := config.PathConfig()
+	configPath, _ := config.PathConfig()
 	cfg, err := config.LoadConfig(lg, configPath)
 	if err != nil {
 		lg.Error("load config err", "error", err)

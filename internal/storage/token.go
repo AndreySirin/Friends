@@ -24,14 +24,18 @@ func (s *Storage) CreateRefreshToken(ctx context.Context, r *RefreshToken) error
 
 func (s *Storage) GetRefreshToken(ctx context.Context, token string) (*RefreshToken, error) {
 	var t RefreshToken
+	var err error
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating transaction: %w", err)
 	}
+
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			if RollbackErr := tx.Rollback(); RollbackErr != nil {
+				err = fmt.Errorf("error rolling back transaction: %w", err)
+			}
 		}
 	}()
 
