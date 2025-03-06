@@ -1,24 +1,25 @@
 services:
   app:
       build:
-        context: .  # Используем текущую директорию для сборки
-        dockerfile: Dockerfile  # Указываем имя Dockerfile, если оно нестандартное
+        context: .
+        dockerfile: Dockerfile
       environment:
-        - DB_HOST=postgres
+        - DB_HOST=andrey
         - DB_USER=andrey
         - DB_PASSWORD=andrey
         - DB_NAME=database
       ports:
-          - "8080:8080"  # Пробрасываем порт приложения на хост
+          - "8080:8080"
       depends_on:
-          - postgres  # Убедимся, что база данных запускается до приложения
+        postgres:
+          condition: service_healthy
       networks:
-          - my-network  # Создадим общую сеть для взаимодействия между контейнерами
+          - my-network
 
   postgres:
       image: postgres:14-alpine
       environment:
-        POSTGRES_DB: database
+        POSTGRES_DB: andrey
         POSTGRES_USER: andrey
         POSTGRES_PASSWORD: andrey
         PGDATA: /var/lib/postgresql/data
@@ -28,6 +29,10 @@ services:
         - "5432:5432"
       networks:
         - my-network
+      healthcheck:
+        test: [ "CMD", "pg_isready", "-U", "andrey" ]
+        interval: 5s
+        retries: 5
 
 volumes:
   postgresql-data:

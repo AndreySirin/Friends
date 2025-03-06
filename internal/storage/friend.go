@@ -27,16 +27,20 @@ func (s *Storage) AddProductFriend(ctx context.Context, productFriend *ProductFr
 }
 
 func (s *Storage) UpdateProductFriend(ctx context.Context, productFriend *ProductFriend) error {
-
+	var err error
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction for UpdateProductFriend: %w", err)
 	}
+
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			if RollbackErr := tx.Rollback(); RollbackErr != nil {
+				err = fmt.Errorf("error rolling back transaction: %w", err)
+			}
 		}
 	}()
+
 	var exists bool
 	err = tx.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM products WHERE id = $1)`,
 		productFriend.ID).Scan(&exists)
