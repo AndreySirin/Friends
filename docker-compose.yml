@@ -11,7 +11,8 @@ services:
       ports:
           - "8080:8080"  # Пробрасываем порт приложения на хост
       depends_on:
-          - postgres  # Убедимся, что база данных запускается до приложения
+        postgres:
+          condition: service_healthy
       networks:
           - my-network  # Создадим общую сеть для взаимодействия между контейнерами
 
@@ -28,6 +29,10 @@ services:
         - "5432:5432"
       networks:
         - my-network
+      healthcheck:
+        test: [ "CMD", "pg_isready", "-U", "andrey" ]
+        interval: 5s
+        retries: 5
 
 volumes:
   postgresql-data:
