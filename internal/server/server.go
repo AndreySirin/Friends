@@ -38,9 +38,9 @@ func NewServer(log *slog.Logger, addr string, friend storage.StorageFriend, au *
 
 			r.With(s.authMiddleware).Group(func(r chi.Router) {
 				r.Get("/price", s.priceHandler)
-				r.Post("/AddNewUser", s.AddUserHandler)
-				r.Put("/UpdateUser", s.UpdateUser)
-				r.Delete("/DeleteUser/{id}", s.DeleteUserHandler)
+				r.Post("/user", s.AddUserHandler)
+				r.Put("/user", s.UpdateUser)
+				r.Delete("/user/{id}", s.DeleteUserHandler)
 			})
 		})
 	})
